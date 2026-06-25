@@ -7,8 +7,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    outputs:
-      script-file: ${{ steps.theSharefile.outputs.try-file }}
     steps:
       - name: Get code
         uses: actions/checkout@v3
@@ -16,14 +14,13 @@ jobs:
         run: npm ci
       - name: Lint code
         run: npm run lint
-      - name: share the file
-        id: theSharefile
-        run: find dist/assets/*.js -type f -execdir echo 'try-file={}' >> $GITHUB_OUTPUT ';' 
       - name: Test code
         run: npm run test
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{ steps.theSharefile.outputs.try-file }}
     steps:
       - name: Get code
         uses: actions/checkout@v3
@@ -37,11 +34,14 @@ jobs:
           name: dist-file
           path:
             dist
+      - name: share the file
+        id: theSharefile
+        run: find dist/assets/*.js -type f -execdir echo 'try-file={}' >> $GITHUB_OUTPUT ';' 
   deploy:
-    needs: [build,test]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
         run: echo "Deploying..."
       - name: get output FIle
-        run: echo "${{ needs.test.outputs.script-file}}" 
+        run: echo "${{ needs.build.outputs.script-file}}" 
